@@ -1,34 +1,37 @@
 import pymysql.cursors
 import wxpy
 
+# 登陆微信
+bot = wxpy.Bot(True)
 
-bot = wxpy.Bot()
+# 获取群列表
+groups = bot.groups()
+groups_info = [group.name for group in groups]
 
-gs = bot.groups()
-g_info = []
-for g in gs:
-    g_info.append(g.name)
-
-for i in range(len(g_info)):
-    print("%d、%s" % (i, g_info[i]))
+# 输出群列表
+for i in range(len(groups_info)):
+    print("%d、%s" % (i, groups_info[i]))
 
 # 读取要记录的群
 i = input("输入群的序号\n")
-g = gs[int(i)]
-g.update_group(True)
-gms = g.members
+group = groups[int(i)]
+
+print("稍等片刻，正在获取成员信息")
+# 更新群信息，打印输出群概况
+group.update_group(True)
+group_members = group.members
 print("本群的概况如下：")
-print(gms.stats_text())
+print(group_members.stats_text())
 
 # 读取信息并将他们记录在一个字典里
-gmt = {}
-for gm in gms:
+group_members_dit = {}
+for group_member in group_members:
     sex = ''
-    if gm.sex == 1:
+    if group_member.sex == 1:
         sex = "男性"
-    elif gm.sex == 2:
+    elif group_member.sex == 2:
         sex = "女性"
-    gmt[gm.name] = (sex, gm.city, gm.province)
+    group_members_dit[group_member.name] = (sex, group_member.city, group_member.province)
 
 # Connect to the database
 
@@ -42,9 +45,20 @@ connection = pymysql.connect(host='localhost',
 
 try:
     with connection.cursor() as cursor:
-        # Create a new record
-        sql = "INSERT INTO `horticulture_grp` (`name`, `sex`, `city`, `province`) VALUES (%s, %s, %s, %s)"
-        for name, info in gmt.items():
+        print("正在创建数据表")
+        # 创建数据表named group's name
+        group_name = "`{0}`".format(group.name)
+        sql = "CREATE TABLE IF NOT EXISTS {0} (name VARCHAR(255),sex TEXT,city TEXT,province TEXT)".format(group_name)
+        cursor.execute(sql)
+
+        # 配置表，使emoji表情可以存入
+        sql = "alter table {0} convert to character set utf8mb4 collate utf8mb4_bin".format(group_name)
+        cursor.execute(sql)
+
+        print("正在录入数据")
+        # 录入数据
+        sql = "INSERT INTO {0} (`name`, `sex`, `city`, `province`) VALUES (%s, %s, %s, %s)".format(group_name)
+        for name, info in group_members_dit.items():
             sex = info[0]
             city = info[1]
             province = info[2]
@@ -54,11 +68,8 @@ try:
     # your changes.
     connection.commit()
 
-    # with connection.cursor() as cursor:
-    #     # Read a single record
-    #     sql = "SELECT `email`, `password` FROM `users` WHERE `email`=%s"
-    #     cursor.execute(sql, ('webmaster@python.org'))
-    #     result = cursor.fetchone()
-    #     print(result)
 finally:
     connection.close()
+    bot.logout()
+    print("程序结束")
+
