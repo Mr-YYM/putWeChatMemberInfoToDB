@@ -2,15 +2,15 @@ import pymysql.cursors
 import wxpy
 
 # 登陆微信
-bot = wxpy.Bot(True)
+bot = wxpy.Bot()
 
 # 获取群列表
 groups = bot.groups()
 groups_info = [group.name for group in groups]
 
 # 输出群列表
-for i in range(len(groups_info)):
-    print("%d、%s" % (i, groups_info[i]))
+for i, each_group in enumerate(groups_info):
+    print("%d、%s" % (i, each_group))
 
 # 读取要记录的群
 i = input("输入群的序号\n")
