@@ -38,7 +38,7 @@ for group_member in group_members:
 connection = pymysql.connect(host='localhost',
                              user='root',
                              password='123456',
-                             db='guoup_info',
+                             db='group_info',
                              charset='utf8mb4',
                              cursorclass=pymysql.cursors.DictCursor)
 
